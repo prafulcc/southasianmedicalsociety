@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Quiz Viewer</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪷</text></svg>"
+        />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            .form-input:focus,
+            .btn:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px #3b82f6; /* Equivalent to focus:ring-2 focus:ring-blue-500 */
+            }
+            .option-label.correct {
+                background-color: rgba(16, 185, 129, 0.1);
+                border-color: #059669; /* green-600 */
+            }
+            .option-label.incorrect {
+                background-color: rgba(220, 38, 38, 0.1);
+                border-color: #dc2626; /* red-600 */
+            }
+            .option-explanation {
+                display: none;
+            }
+            /* Hide default summary marker */
+            summary::-webkit-details-marker {
+                display: none;
+            }
+            summary {
+                list-style: none;
+            }
+        </style>
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    </head>
+    <body class="bg-slate-900 text-slate-200">
+        <nav class="bg-slate-800/50 border-b border-slate-700">
+            <div
+                class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl flex items-center justify-between h-16"
+            >
+                <span class="font-bold text-xl text-slate-100"
+                    >South Asian Medical Society</span
+                >
+                <div class="space-x-6">
+                    <a
+                        href="builder.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >Quiz Builder</a
+                    >
+                    <a
+                        href="index.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >Question Bank</a
+                    >
+                    <a
+                        href="about.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >About Us</a
+                    >
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+            <!-- Initial View: Paste Base64 -->
+            <div id="loaderView">
+                <header class="mb-8 text-center sm:text-left">
+                    <h1 class="text-3xl font-bold text-slate-100 mb-2">
+                        Take a Quiz
+                    </h1>
+                    <p class="text-lg text-slate-400">
+                        Paste your Base64 encoded quiz data below or use a
+                        direct link to begin.
+                    </p>
+                </header>
+                <div class="space-y-4">
+                    <textarea
+                        id="base64Input"
+                        class="form-input w-full p-3 bg-slate-800 border border-slate-600 text-slate-200 rounded-md text-base h-40"
+                        placeholder="Paste your Base64 string here..."
+                    ></textarea>
+                    <button
+                        id="loadQuizBtn"
+                        class="btn w-full sm:w-auto bg-blue-600 text-white font-semibold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Load Quiz</span>
+                    </button>
+                    <p
+                        id="error-message"
+                        class="text-red-400 text-sm hidden"
+                    ></p>
+                </div>
+            </div>
+
+            <!-- Previous Attempt View -->
+            <div id="previousAttemptView" class="hidden">
+                <header class="mb-8 text-center">
+                    <h1
+                        class="text-3xl font-bold text-slate-100 mb-2"
+                        id="previousQuizTitle"
+                    ></h1>
+                    <p class="text-lg text-slate-400">
+                        You've taken this quiz before. Here are your last
+                        results.
+                    </p>
+                </header>
+                <div class="bg-slate-800/50 p-6 rounded-lg text-center">
+                    <p
+                        class="text-sm text-slate-400"
+                        id="previousAttemptInfo"
+                    ></p>
+                    <p
+                        id="previousScore"
+                        class="text-4xl font-bold text-green-400 my-3"
+                    ></p>
+                    <p
+                        id="previousTimestamp"
+                        class="text-sm text-slate-500"
+                    ></p>
+                </div>
+                <div
+                    class="mt-8 flex flex-col sm:flex-row justify-center gap-4"
+                >
+                    <button
+                        id="attemptAgainBtn"
+                        class="btn w-full sm:w-auto bg-blue-600 text-white font-semibold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Attempt Quiz Again
+                    </button>
+                    <button
+                        id="loadDifferentBtn"
+                        class="btn w-full sm:w-auto bg-slate-700 text-white font-semibold py-3 px-6 rounded-md hover:bg-slate-600 transition-colors"
+                    >
+                        Manually Load Quiz
+                    </button>
+                    <a
+                        href="index.html"
+                        class="btn block w-full sm:w-auto bg-slate-700 text-white font-semibold py-3 px-6 rounded-md hover:bg-slate-600 transition-colors text-center"
+                        >Back To Question Bank</a
+                    >
+                </div>
+            </div>
+
+            <!-- Quiz View: Active Quiz -->
+            <div id="quizView" class="hidden">
+                <h1
+                    id="quizTitle"
+                    class="text-3xl font-bold text-slate-100 mb-2 text-center"
+                ></h1>
+                <p
+                    class="text-lg text-slate-400 mb-8 text-center"
+                    id="questionIndicator"
+                ></p>
+
+                <div id="questionContainer">
+                    <!-- Question content will be injected here -->
+                </div>
+
+                <div class="flex justify-between items-center mt-8">
+                    <button
+                        id="prevQuestionBtn"
+                        class="btn bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-md transition-colors"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        id="nextQuestionBtn"
+                        class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition-colors"
+                    >
+                        Next
+                    </button>
+                    <button
+                        id="finishQuizBtn"
+                        class="btn bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors hidden"
+                    >
+                        Finish Quiz
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results View -->
+            <div id="resultsView" class="hidden">
+                <header class="mb-8 text-center">
+                    <h1 class="text-3xl font-bold text-slate-100 mb-2">
+                        Quiz Results
+                    </h1>
+                    <p
+                        id="score"
+                        class="text-2xl font-semibold text-green-400"
+                    ></p>
+                    <p
+                        id="attemptCounter"
+                        class="text-sm text-slate-400 mt-1"
+                    ></p>
+                </header>
+                <div id="resultsContainer" class="space-y-6">
+                    <!-- Results breakdown will be injected here -->
+                </div>
+                <div
+                    class="mt-8 flex flex-col sm:flex-row justify-center gap-4"
+                >
+                    <button
+                        id="tryAgainBtn"
+                        class="btn w-full sm:w-auto bg-blue-600 text-white font-semibold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Try Again
+                    </button>
+                    <button
+                        id="startOverBtn"
+                        class="btn w-full sm:w-auto bg-slate-700 text-white font-semibold py-3 px-6 rounded-md hover:bg-slate-600 transition-colors"
+                    >
+                        Manually Load Quiz
+                    </button>
+                    <a
+                        href="index.html"
+                        class="btn block w-full sm:w-auto bg-slate-700 text-white font-semibold py-3 px-6 rounded-md hover:bg-slate-600 transition-colors text-center"
+                        >Back To Question Bank</a
+                    >
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const loaderView = document.getElementById("loaderView");
+                const quizView = document.getElementById("quizView");
+                const resultsView = document.getElementById("resultsView");
+                const previousAttemptView = document.getElementById(
+                    "previousAttemptView",
+                );
+
+                const base64Input = document.getElementById("base64Input");
+                const loadQuizBtn = document.getElementById("loadQuizBtn");
+                const errorMessage = document.getElementById("error-message");
+
+                const quizTitleEl = document.getElementById("quizTitle");
+                const questionIndicatorEl =
+                    document.getElementById("questionIndicator");
+                const questionContainer =
+                    document.getElementById("questionContainer");
+                const prevQuestionBtn =
+                    document.getElementById("prevQuestionBtn");
+                const nextQuestionBtn =
+                    document.getElementById("nextQuestionBtn");
+                const finishQuizBtn = document.getElementById("finishQuizBtn");
+
+                const scoreEl = document.getElementById("score");
+                const attemptCounterEl =
+                    document.getElementById("attemptCounter");
+                const resultsContainer =
+                    document.getElementById("resultsContainer");
+                const startOverBtn = document.getElementById("startOverBtn");
+                const tryAgainBtn = document.getElementById("tryAgainBtn");
+
+                const previousQuizTitleEl =
+                    document.getElementById("previousQuizTitle");
+                const previousAttemptInfoEl = document.getElementById(
+                    "previousAttemptInfo",
+                );
+                const previousScoreEl =
+                    document.getElementById("previousScore");
+                const previousTimestampEl =
+                    document.getElementById("previousTimestamp");
+                const attemptAgainBtn =
+                    document.getElementById("attemptAgainBtn");
+                const loadDifferentBtn =
+                    document.getElementById("loadDifferentBtn");
+
+                let quizData = null;
+                let currentQuizKey = null;
+                let currentQuestionIndex = 0;
+                let userAnswers = [];
+
+                const startQuiz = () => {
+                    try {
+                        const decodedJson = atob(currentQuizKey);
+                        quizData = JSON.parse(decodedJson);
+
+                        if (
+                            !quizData.quizTitle ||
+                            !Array.isArray(quizData.questions) ||
+                            quizData.questions.length === 0
+                        ) {
+                            throw new Error("Invalid quiz data structure.");
+                        }
+
+                        userAnswers = new Array(quizData.questions.length).fill(
+                            null,
+                        );
+                        currentQuestionIndex = 0;
+                        quizTitleEl.textContent = quizData.quizTitle;
+
+                        loaderView.classList.add("hidden");
+                        resultsView.classList.add("hidden");
+                        previousAttemptView.classList.add("hidden");
+                        quizView.classList.remove("hidden");
+
+                        renderQuestion(0);
+                    } catch (e) {
+                        console.error("Failed to load quiz:", e);
+                        errorMessage.textContent =
+                            "Invalid Base64 string or incorrect JSON format. Please try again.";
+                        errorMessage.classList.remove("hidden");
+                        loaderView.classList.remove("hidden");
+                        quizView.classList.add("hidden");
+                        previousAttemptView.classList.add("hidden");
+                    }
+                };
+
+                const loadQuizByKey = (key) => {
+                    errorMessage.classList.add("hidden");
+                    if (!key) {
+                        errorMessage.textContent = "No quiz code provided.";
+                        errorMessage.classList.remove("hidden");
+                        return;
+                    }
+
+                    currentQuizKey = key;
+                    const previousResultBase64 =
+                        localStorage.getItem(currentQuizKey);
+
+                    if (previousResultBase64) {
+                        try {
+                            const previousResult = JSON.parse(
+                                atob(previousResultBase64),
+                            );
+                            displayPreviousAttempt(previousResult);
+                        } catch (e) {
+                            // If stored data is corrupt, just start the quiz
+                            startQuiz();
+                        }
+                    } else {
+                        startQuiz();
+                    }
+                };
+
+                const initializePage = () => {
+                    const urlParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    const quizParam = urlParams.get("quiz");
+                    if (quizParam) {
+                        try {
+                            const decodedKey = decodeURIComponent(quizParam);
+                            loadQuizByKey(decodedKey);
+                        } catch (e) {
+                            console.error(
+                                "Failed to decode quiz param from URL:",
+                                e,
+                            );
+                            errorMessage.textContent =
+                                "The quiz data in the URL is corrupted. Please paste the code manually.";
+                            errorMessage.classList.remove("hidden");
+                        }
+                    }
+                };
+
+                const renderQuestion = (index) => {
+                    const question = quizData.questions[index];
+                    questionIndicatorEl.textContent = `Question ${index + 1} of ${quizData.questions.length}`;
+
+                    // Create a shuffled version of the options while preserving original index
+                    const optionsWithOriginalIndex = question.options.map(
+                        (option, originalIndex) => ({
+                            option: option,
+                            originalIndex: originalIndex,
+                        }),
+                    );
+
+                    // Fisher-Yates shuffle algorithm
+                    for (
+                        let i = optionsWithOriginalIndex.length - 1;
+                        i > 0;
+                        i--
+                    ) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [
+                            optionsWithOriginalIndex[i],
+                            optionsWithOriginalIndex[j],
+                        ] = [
+                            optionsWithOriginalIndex[j],
+                            optionsWithOriginalIndex[i],
+                        ];
+                    }
+
+                    let optionsHtml = optionsWithOriginalIndex
+                        .map(
+                            (item, shuffledIndex) => `
+                    <div>
+                        <input type="radio" id="q${index}-o${shuffledIndex}" name="q${index}-options" value="${item.originalIndex}" class="hidden">
+                        <label for="q${index}-o${shuffledIndex}" class="option-label block p-4 border-2 border-slate-700 rounded-lg cursor-pointer transition-colors hover:bg-slate-800">
+                            <span class="font-semibold text-lg">${item.option.text}</span>
+                            <p class="option-explanation mt-2 text-sm text-slate-400">${item.option.explanation}</p>
+                        </label>
+                    </div>
+                `,
+                        )
+                        .join("");
+
+                    const hintHtml = question.hint
+                        ? `
+                    <details class="mt-6">
+                        <summary class="cursor-pointer inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+                            <span>💡</span>
+                            <span>Need a hint?</span>
+                        </summary>
+                        <div class="mt-2 flex items-start gap-3 text-sm text-slate-300 bg-slate-700/50 p-3 rounded-md">
+                            <span>${question.hint}</span>
+                        </div>
+                    </details>
+                `
+                        : "";
+
+                    const imageHtml = question.image
+                        ? `
+                    <div class="my-6">
+                        <img src="${question.image}"
+                             alt="Question image"
+                             class="max-w-full h-auto mx-auto rounded-lg object-contain max-h-80"
+                             onerror="this.onerror=null; this.outerHTML='<p class=\\'text-center text-red-400\\'>Image link broken</p>';">
+                    </div>
+                `
+                        : "";
+
+                    questionContainer.innerHTML = `
+                    <div class="bg-slate-800/50 p-6 rounded-lg" data-question-answered="false">
+                        <h2 class="text-2xl font-semibold text-slate-100 mb-6">${question.question}</h2>
+                        ${imageHtml}
+                        <div class="space-y-4">${optionsHtml}</div>
+                        ${hintHtml}
+                    </div>
+                `;
+
+                    updateNavButtons();
+                };
+
+                const updateNavButtons = () => {
+                    prevQuestionBtn.disabled = currentQuestionIndex === 0;
+                    nextQuestionBtn.classList.toggle(
+                        "hidden",
+                        currentQuestionIndex === quizData.questions.length - 1,
+                    );
+                    finishQuizBtn.classList.toggle(
+                        "hidden",
+                        currentQuestionIndex !== quizData.questions.length - 1,
+                    );
+                };
+
+                const displayResults = () => {
+                    let correctCount = 0;
+                    resultsContainer.innerHTML = ""; // Clear previous results
+
+                    quizData.questions.forEach((q, index) => {
+                        const userAnswer = userAnswers[index];
+                        const isCorrectOnFirstAttempt =
+                            userAnswer === q.correctAnswerIndex;
+                        if (isCorrectOnFirstAttempt) correctCount++;
+
+                        let optionsBreakdown = q.options
+                            .map((opt, i) => {
+                                let resultClass = "";
+                                if (i === q.correctAnswerIndex)
+                                    resultClass = "correct";
+                                else if (i === userAnswer)
+                                    resultClass = "incorrect";
+                                return `<div class="option-label p-3 border-2 border-slate-700 rounded-lg ${resultClass}"><p class="font-semibold">${opt.text}</p><p class="text-sm text-slate-400 mt-1">${opt.explanation}</p></div>`;
+                            })
+                            .join("");
+
+                        const resultEl = document.createElement("div");
+                        resultEl.className =
+                            "border border-slate-700 p-4 rounded-lg";
+                        resultEl.innerHTML = `<h3 class="font-bold text-lg mb-4">${index + 1}. ${q.question}</h3><div class="space-y-3">${optionsBreakdown}</div>`;
+                        resultsContainer.appendChild(resultEl);
+                    });
+
+                    // --- Handle attempt counting and localStorage ---
+                    const previousResultBase64 =
+                        localStorage.getItem(currentQuizKey);
+                    let attemptNumber = 1;
+                    if (previousResultBase64) {
+                        try {
+                            const previousResult = JSON.parse(
+                                atob(previousResultBase64),
+                            );
+                            if (previousResult.attempt) {
+                                attemptNumber = previousResult.attempt + 1;
+                            }
+                        } catch (e) {
+                            console.error("Could not parse previous result", e);
+                        }
+                    }
+
+                    scoreEl.textContent = `You scored ${correctCount} out of ${quizData.questions.length} on your first attempt`;
+                    attemptCounterEl.textContent = `(Attempt #${attemptNumber})`;
+
+                    // --- Generate and save results data ---
+                    const resultsData = {
+                        quizTitle: quizData.quizTitle,
+                        attempt: attemptNumber,
+                        score: {
+                            correct: correctCount,
+                            total: quizData.questions.length,
+                            percentage: Math.round(
+                                (correctCount / quizData.questions.length) *
+                                    100,
+                            ),
+                        },
+                        completedAt: new Date().toISOString(),
+                        userResponses: quizData.questions.map((q, index) => ({
+                            question: q.question,
+                            userAnswerIndex: userAnswers[index],
+                            correctAnswerIndex: q.correctAnswerIndex,
+                            isCorrectOnFirstAttempt:
+                                userAnswers[index] === q.correctAnswerIndex,
+                        })),
+                    };
+
+                    const jsonString = JSON.stringify(resultsData, null, 2);
+                    const base64String = btoa(jsonString);
+                    localStorage.setItem(currentQuizKey, base64String);
+
+                    // --- Switch views ---
+                    loaderView.classList.add("hidden");
+                    quizView.classList.add("hidden");
+                    previousAttemptView.classList.add("hidden");
+                    resultsView.classList.remove("hidden");
+                };
+
+                const displayPreviousAttempt = (resultData) => {
+                    previousQuizTitleEl.textContent = resultData.quizTitle;
+                    previousAttemptInfoEl.textContent = `This was your result from attempt #${resultData.attempt}.`;
+                    previousScoreEl.textContent = `${resultData.score.percentage}%`;
+                    const date = new Date(resultData.completedAt);
+                    previousTimestampEl.textContent = `Completed on: ${date.toLocaleString()}`;
+
+                    loaderView.classList.add("hidden");
+                    quizView.classList.add("hidden");
+                    resultsView.classList.add("hidden");
+                    previousAttemptView.classList.remove("hidden");
+                };
+
+                loadQuizBtn.addEventListener("click", () => {
+                    loadQuizByKey(base64Input.value.trim());
+                });
+
+                questionContainer.addEventListener("click", (e) => {
+                    const label = e.target.closest("label");
+                    if (!label) return;
+
+                    const questionEl = e.target.closest(
+                        "[data-question-answered]",
+                    );
+                    if (questionEl.dataset.questionAnswered === "true") return;
+
+                    const question = quizData.questions[currentQuestionIndex];
+
+                    const inputEl = document.getElementById(label.htmlFor);
+                    if (!inputEl) return;
+                    const selectedOptionIndex = parseInt(inputEl.value);
+
+                    if (userAnswers[currentQuestionIndex] === null) {
+                        userAnswers[currentQuestionIndex] = selectedOptionIndex;
+                    }
+
+                    const explanationEl = label.querySelector(
+                        ".option-explanation",
+                    );
+                    if (explanationEl) explanationEl.style.display = "block";
+
+                    const isCorrect =
+                        selectedOptionIndex === question.correctAnswerIndex;
+
+                    if (isCorrect) {
+                        label.classList.add("correct");
+                        questionEl.dataset.questionAnswered = "true";
+                        questionEl
+                            .querySelectorAll("label")
+                            .forEach((l) => (l.style.cursor = "default"));
+                    } else {
+                        label.classList.add("incorrect");
+                        label.style.cursor = "not-allowed";
+                    }
+                });
+
+                const navigateQuestion = (direction) => {
+                    if (
+                        direction === "next" &&
+                        currentQuestionIndex < quizData.questions.length - 1
+                    )
+                        currentQuestionIndex++;
+                    else if (direction === "prev" && currentQuestionIndex > 0)
+                        currentQuestionIndex--;
+                    renderQuestion(currentQuestionIndex);
+                };
+
+                nextQuestionBtn.addEventListener("click", () =>
+                    navigateQuestion("next"),
+                );
+                prevQuestionBtn.addEventListener("click", () =>
+                    navigateQuestion("prev"),
+                );
+                finishQuizBtn.addEventListener("click", displayResults);
+
+                const resetToLoader = () => {
+                    resultsView.classList.add("hidden");
+                    quizView.classList.add("hidden");
+                    previousAttemptView.classList.add("hidden");
+                    loaderView.classList.remove("hidden");
+                    base64Input.value = "";
+                    quizData = null;
+                    userAnswers = [];
+                    currentQuizKey = null;
+                };
+
+                startOverBtn.addEventListener("click", resetToLoader);
+                tryAgainBtn.addEventListener("click", startQuiz);
+                loadDifferentBtn.addEventListener("click", resetToLoader);
+                attemptAgainBtn.addEventListener("click", startQuiz);
+
+                // Initialize the page by checking URL params
+                initializePage();
+            });
+        </script>
+    </body>
+</html>

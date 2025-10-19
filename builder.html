@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MCQ Quiz Builder</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪷</text></svg>"
+        />
+        <script src="https://cdn-tailwindcss.vercel.app/"></script>
+        <style>
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            .form-input:focus,
+            .btn:focus,
+            .icon-btn:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px #3b82f6; /* Equivalent to focus:ring-2 focus:ring-blue-500 */
+            }
+            .carousel-item {
+                display: none;
+            }
+            .carousel-item.active {
+                display: block;
+            }
+            .border-red-500 {
+                border-color: #ef4444;
+            }
+            .radio-validation-error {
+                padding: 0.5rem;
+            }
+        </style>
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    </head>
+    <body class="bg-slate-900 text-slate-200">
+        <nav class="bg-slate-800/50 border-b border-slate-700">
+            <div
+                class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl flex items-center justify-between h-16"
+            >
+                <span class="font-bold text-xl text-slate-100"
+                    >South Asian Medical Society</span
+                >
+                <div class="space-x-6">
+                    <a
+                        href="index.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >Question Bank</a
+                    >
+                    <a
+                        href="about.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >About Us</a
+                    >
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+            <header class="mb-8 text-center sm:text-left">
+                <h1 class="text-3xl sm:text-4xl font-bold text-slate-100 mb-2">
+                    MCQ Quiz Builder
+                </h1>
+                <p class="text-base sm:text-lg text-slate-400">
+                    Create your own multiple-choice quizzes with detailed
+                    explanations.
+                </p>
+            </header>
+
+            <div class="space-y-6">
+                <div class="border border-slate-700 p-4 sm:p-6 rounded-lg">
+                    <label
+                        for="quizTitle"
+                        class="block text-lg font-semibold text-slate-300 mb-2"
+                        >Quiz Title</label
+                    >
+                    <input
+                        type="text"
+                        id="quizTitle"
+                        class="form-input w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200 text-base"
+                        placeholder="e.g., Cranial Nerves Quiz"
+                    />
+                </div>
+
+                <div id="questionsContainer" class="space-y-6">
+                    <!-- Questions will be added here dynamically -->
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <button
+                    id="addQuestionBtn"
+                    class="btn w-full sm:w-auto bg-slate-700 text-white font-semibold py-3 px-6 rounded-md hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Question</span>
+                </button>
+            </div>
+
+            <div class="mt-10 border-t border-slate-700 pt-6">
+                <button
+                    id="generateJsonBtn"
+                    class="btn w-full sm:w-auto bg-blue-600 text-white font-semibold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                        ></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Generate</span>
+                </button>
+                <div id="outputContainer" class="mt-6 hidden">
+                    <!-- Base64 Output -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label
+                                for="base64Output"
+                                class="block text-lg font-semibold text-slate-300"
+                                >Base64 Output</label
+                            >
+                            <button
+                                id="copyBase64Btn"
+                                title="Copy Base64"
+                                class="icon-btn p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-full transition-colors"
+                            >
+                                <svg
+                                    class="pointer-events-none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <rect
+                                        x="9"
+                                        y="9"
+                                        width="13"
+                                        height="13"
+                                        rx="2"
+                                        ry="2"
+                                    ></rect>
+                                    <path
+                                        d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <textarea
+                            id="base64Output"
+                            readonly
+                            class="form-input w-full p-3 bg-slate-800 border border-slate-600 text-slate-200 rounded-md h-40 font-mono text-sm"
+                        ></textarea>
+                    </div>
+
+                    <!-- Preview Button -->
+                    <div class="mt-6">
+                        <button
+                            id="previewQuizBtn"
+                            class="btn inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold py-3 px-6 rounded-md hover:bg-green-700 transition-colors"
+                        >
+                            <span>Preview Generated Quiz</span>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                                ></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const questionsContainer =
+                    document.getElementById("questionsContainer");
+                const addQuestionBtn =
+                    document.getElementById("addQuestionBtn");
+                const generateJsonBtn =
+                    document.getElementById("generateJsonBtn");
+                const outputContainer =
+                    document.getElementById("outputContainer");
+                const base64Output = document.getElementById("base64Output");
+                const copyBase64Btn = document.getElementById("copyBase64Btn");
+                const previewQuizBtn =
+                    document.getElementById("previewQuizBtn");
+
+                let questionCount = 0;
+
+                const addQuestion = () => {
+                    questionCount++;
+                    const questionId = questionCount;
+                    const questionElement = document.createElement("div");
+                    questionElement.className =
+                        "question-block border border-slate-700 p-4 sm:p-6 rounded-lg";
+                    questionElement.setAttribute(
+                        "data-question-id",
+                        questionId,
+                    );
+                    questionElement.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-bold text-slate-100">Question ${questionId}</h3>
+                    <button class="remove-question-btn icon-btn p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors" title="Remove Question">
+                        <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label for="q-${questionId}-text" class="block text-base font-semibold text-slate-300 mb-2">Question Text</label>
+                        <textarea id="q-${questionId}-text" data-field="question" class="form-input w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200" rows="2" placeholder="What is the function of the Olfactory Nerve?"></textarea>
+                    </div>
+                     <div>
+                        <label for="q-${questionId}-image" class="block text-base font-semibold text-slate-300 mb-2">Image URL (Optional)</label>
+                        <input type="url" id="q-${questionId}-image" data-field="image" class="form-input w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200" placeholder="https://example.com/image.png">
+                    </div>
+                    <div>
+                        <label for="q-${questionId}-hint" class="block text-base font-semibold text-slate-300 mb-2">Hint (Optional)</label>
+                        <input type="text" id="q-${questionId}-hint" data-field="hint" class="form-input w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200" placeholder="Think about your sense of smell.">
+                    </div>
+
+                    <!-- Options Carousel -->
+                    <div class="options-carousel" data-question-id="${questionId}">
+                        <div class="carousel-items space-y-4">
+                            ${[...Array(4)]
+                                .map(
+                                    (_, i) => `
+                                <div class="carousel-item ${i === 0 ? "active" : ""}" data-option-index="${i}">
+                                    <div class="border border-slate-600 p-4 rounded-lg">
+                                        <div class="flex justify-between items-center mb-3">
+                                            <h4 class="text-base font-semibold text-slate-300">Option ${i + 1}</h4>
+                                            <div class="flex items-center">
+                                                <label for="q-${questionId}-correct-${i}" class="text-sm mr-2 text-slate-400">Correct Answer</label>
+                                                <input type="radio" id="q-${questionId}-correct-${i}" name="q-${questionId}-correct" value="${i}" class="form-radio h-4 w-4 text-blue-500 bg-slate-600 border-slate-500 focus:ring-blue-500">
+                                            </div>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label for="q-${questionId}-option-${i}" class="text-sm font-medium text-slate-400">Option Text</label>
+                                                <input type="text" id="q-${questionId}-option-${i}" data-field="option-text" class="form-input w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200 mt-1" placeholder="e.g., Vision">
+                                            </div>
+                                            <div>
+                                                <label for="q-${questionId}-explanation-${i}" class="text-sm font-medium text-slate-400">Explanation</label>
+                                                <textarea id="q-${questionId}-explanation-${i}" data-field="option-explanation" class="form-input w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200 mt-1" rows="2" placeholder="e.g., This is the function of the Optic Nerve."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                                )
+                                .join("")}
+                        </div>
+                        <div class="flex justify-center items-center gap-4 mt-4">
+                            <button class="prev-option-btn icon-btn p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Previous Option" disabled>
+                               <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                            </button>
+                            <div class="carousel-indicator text-sm text-slate-400">1 / 4</div>
+                            <button class="next-option-btn icon-btn p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-full transition-colors" title="Next Option">
+                                 <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+                    questionsContainer.appendChild(questionElement);
+                };
+
+                const updateCarousel = (carouselElement, newIndex) => {
+                    const items =
+                        carouselElement.querySelectorAll(".carousel-item");
+                    const indicator = carouselElement.querySelector(
+                        ".carousel-indicator",
+                    );
+                    const prevBtn =
+                        carouselElement.querySelector(".prev-option-btn");
+                    const nextBtn =
+                        carouselElement.querySelector(".next-option-btn");
+
+                    items.forEach((item, idx) => {
+                        item.classList.toggle("active", idx === newIndex);
+                    });
+
+                    indicator.textContent = `${newIndex + 1} / 4`;
+                    prevBtn.disabled = newIndex === 0;
+                    nextBtn.disabled = newIndex === 3;
+                };
+
+                const generateJson = () => {
+                    // 1. Clear previous validation errors
+                    const errorInputs =
+                        document.querySelectorAll(".border-red-500");
+                    errorInputs.forEach((el) =>
+                        el.classList.remove("border-red-500"),
+                    );
+
+                    const radioErrorContainers = document.querySelectorAll(
+                        ".radio-validation-error",
+                    );
+                    radioErrorContainers.forEach((el) => {
+                        el.classList.remove(
+                            "radio-validation-error",
+                            "border",
+                            "border-red-500",
+                            "rounded-lg",
+                        );
+                    });
+
+                    let isValid = true;
+
+                    // 2. Validate Quiz Title
+                    const quizTitleInput = document.getElementById("quizTitle");
+                    if (!quizTitleInput.value.trim()) {
+                        quizTitleInput.classList.add("border-red-500");
+                        isValid = false;
+                    }
+
+                    // 3. Validate each question and its contents
+                    document
+                        .querySelectorAll(".question-block")
+                        .forEach((questionElement) => {
+                            // Validate question text
+                            const questionTextInput =
+                                questionElement.querySelector(
+                                    '[data-field="question"]',
+                                );
+                            if (!questionTextInput.value.trim()) {
+                                questionTextInput.classList.add(
+                                    "border-red-500",
+                                );
+                                isValid = false;
+                            }
+
+                            // Validate all options and explanations
+                            questionElement
+                                .querySelectorAll(".carousel-item")
+                                .forEach((optionElement) => {
+                                    const optionInput =
+                                        optionElement.querySelector(
+                                            '[data-field="option-text"]',
+                                        );
+                                    if (!optionInput.value.trim()) {
+                                        optionInput.classList.add(
+                                            "border-red-500",
+                                        );
+                                        isValid = false;
+                                    }
+
+                                    const explanationInput =
+                                        optionElement.querySelector(
+                                            '[data-field="option-explanation"]',
+                                        );
+                                    if (!explanationInput.value.trim()) {
+                                        explanationInput.classList.add(
+                                            "border-red-500",
+                                        );
+                                        isValid = false;
+                                    }
+                                });
+
+                            // Validate that a correct answer is selected
+                            const correctAnswerInput =
+                                questionElement.querySelector(
+                                    'input[type="radio"]:checked',
+                                );
+                            if (!correctAnswerInput) {
+                                const radioContainer =
+                                    questionElement.querySelector(
+                                        ".options-carousel",
+                                    );
+                                radioContainer.classList.add(
+                                    "radio-validation-error",
+                                    "border",
+                                    "border-red-500",
+                                    "rounded-lg",
+                                );
+                                isValid = false;
+                            }
+                        });
+
+                    // 4. If any validation failed, stop here
+                    if (!isValid) {
+                        outputContainer.classList.add("hidden");
+                        return;
+                    }
+
+                    // 5. If all is valid, gather the data
+                    const quizTitle = quizTitleInput.value.trim();
+                    const questionsArray = [];
+                    document
+                        .querySelectorAll(".question-block")
+                        .forEach((questionElement) => {
+                            const questionText = questionElement
+                                .querySelector('[data-field="question"]')
+                                .value.trim();
+                            const hintText = questionElement
+                                .querySelector('[data-field="hint"]')
+                                .value.trim();
+                            const imageUrl = questionElement
+                                .querySelector('[data-field="image"]')
+                                .value.trim();
+                            const options = [];
+                            const correctAnswerIndex = parseInt(
+                                questionElement.querySelector(
+                                    'input[type="radio"]:checked',
+                                ).value,
+                            );
+
+                            questionElement
+                                .querySelectorAll(".carousel-item")
+                                .forEach((optionElement) => {
+                                    const optionText = optionElement
+                                        .querySelector(
+                                            '[data-field="option-text"]',
+                                        )
+                                        .value.trim();
+                                    const explanationText = optionElement
+                                        .querySelector(
+                                            '[data-field="option-explanation"]',
+                                        )
+                                        .value.trim();
+                                    options.push({
+                                        text: optionText,
+                                        explanation: explanationText,
+                                    });
+                                });
+
+                            const questionObject = {
+                                question: questionText,
+                                options: options,
+                                correctAnswerIndex: correctAnswerIndex,
+                            };
+
+                            if (hintText) questionObject.hint = hintText;
+                            if (imageUrl) questionObject.image = imageUrl;
+                            questionsArray.push(questionObject);
+                        });
+
+                    // 6. Construct the final object and generate outputs
+                    const fullQuizObject = {
+                        quizTitle: quizTitle,
+                        questions: questionsArray,
+                    };
+                    const jsonString = JSON.stringify(fullQuizObject, null, 2);
+                    const base64String = btoa(jsonString);
+                    const encodedString = encodeURIComponent(base64String);
+                    const quizLink = `./quiz.html?quiz=${encodedString}`;
+
+                    base64Output.value = base64String;
+                    previewQuizBtn.dataset.quizLink = quizLink;
+                    outputContainer.classList.remove("hidden");
+                };
+
+                const updateQuestionNumbers = () => {
+                    document
+                        .querySelectorAll(".question-block")
+                        .forEach((el, index) => {
+                            el.querySelector("h3").textContent =
+                                `Question ${index + 1}`;
+                        });
+                    questionCount =
+                        document.querySelectorAll(".question-block").length;
+                };
+
+                addQuestionBtn.addEventListener("click", addQuestion);
+
+                questionsContainer.addEventListener("click", (e) => {
+                    const target = e.target;
+
+                    if (target.closest(".remove-question-btn")) {
+                        target.closest(".question-block").remove();
+                        updateQuestionNumbers();
+                    }
+
+                    const carousel = target.closest(".options-carousel");
+                    if (!carousel) return;
+
+                    const items = carousel.querySelectorAll(".carousel-item");
+                    let currentIndex = Array.from(items).findIndex((item) =>
+                        item.classList.contains("active"),
+                    );
+
+                    if (target.closest(".next-option-btn")) {
+                        if (currentIndex < items.length - 1) {
+                            updateCarousel(carousel, currentIndex + 1);
+                        }
+                    } else if (target.closest(".prev-option-btn")) {
+                        if (currentIndex > 0) {
+                            updateCarousel(carousel, currentIndex - 1);
+                        }
+                    }
+                });
+
+                generateJsonBtn.addEventListener("click", generateJson);
+
+                previewQuizBtn.addEventListener("click", () => {
+                    const link = previewQuizBtn.dataset.quizLink;
+                    if (link) {
+                        window.open(link, "_blank");
+                    }
+                });
+
+                const copyToClipboard = (elementId) => {
+                    const element = document.getElementById(elementId);
+                    element.select();
+                    // For mobile devices
+                    element.setSelectionRange(0, 99999);
+                    document.execCommand("copy");
+                };
+
+                copyBase64Btn.addEventListener("click", () =>
+                    copyToClipboard("base64Output"),
+                );
+
+                // Add the first question automatically
+                addQuestion();
+            });
+        </script>
+    </body>
+</html>

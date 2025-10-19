@@ -1,0 +1,78 @@
+{
+  "semesters": [
+    {
+      "title": "Semester 1: Mind and Movement",
+      "weeks": [
+        {
+          "title": "Theme 1a: Early Embryology, Biology Barriers, and an Introduction to Mendelian Inheritance",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        },
+        {
+          "title": "Theme 1b: Fertilisation, Pregnancy, and Parturition",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        },
+        {
+          "title": "Theme 2: Chromosomal Anomalies",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        },
+        {
+          "title": "Theme 3: Post-natal Growth and Puberty",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Semester 3: Mind and Movement",
+      "weeks": [
+        {
+          "title": "Theme 1: Introduction to the Nervous System",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        },
+        {
+          "title": "Theme 2: Introduction to the Movement",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        },
+        {
+          "title": "Theme 3: Neurodegenration",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        },
+        {
+          "title": "Theme 4: Neurocognition",
+          "quizzes": [
+            {
+              "quizData": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
