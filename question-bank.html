@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Question Bank</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪷</text></svg>"
+        />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {
+                font-family: "Inter", sans-serif;
+            }
+        </style>
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    </head>
+
+    <body class="bg-slate-900 text-slate-200">
+        <nav class="bg-slate-800 border-b border-slate-700">
+            <!-- This nav bar remains visible regardless of password success -->
+            <div
+                class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl flex items-center justify-between h-16"
+            >
+                <span class="font-bold text-xl text-slate-100"
+                    >South Asian Medical Society</span
+                >
+                <div class="space-x-6">
+                    <a
+                        href="builder.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >Quiz Builder</a
+                    >
+                    <a
+                        href="index.html"
+                        class="text-slate-300 hover:text-white transition-colors text-base"
+                        >About Us</a
+                    >
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+            <!-- Header remains visible -->
+            <header class="mb-8 text-center sm:text-left">
+                <h1 class="text-3xl sm:text-4xl font-bold text-slate-100 mb-2">
+                    Question Bank
+                </h1>
+                <p class="text-base sm:text-lg text-slate-400">
+                    Browse quizzes organised by semester and theme.
+                </p>
+            </header>
+
+            <main>
+                <!-- Error message or content will be placed here -->
+                <div id="semestersContainer" class="space-y-6">
+                    <!-- Quiz data or access denied message will be dynamically inserted here -->
+                </div>
+            </main>
+        </div>
+
+        <script>
+            // --- START: PASSWORD PROTECTION GATE (Immediate Execution) ---
+            // NOTE: The password is "2025"
+            const CORRECT_PASSWORD = "2025";
+            const ACCESS_EXPIRY_KEY = "sams_access_expiry";
+            // 24 hours in milliseconds
+            const EXPIRY_DURATION_MS = 24 * 60 * 60 * 1000;
+
+            // Get the container where the content or error should be displayed
+            const semestersContainer =
+                document.getElementById("semestersContainer");
+
+            let accessGranted = false;
+            const now = Date.now();
+
+            // 1. Check for existing, non-expired access token in localStorage
+            const storedExpiry = localStorage.getItem(ACCESS_EXPIRY_KEY);
+
+            if (storedExpiry && parseInt(storedExpiry) > now) {
+                // Access token found and is still valid (less than 24 hours since last login)
+                accessGranted = true;
+            } else {
+                // 2. Token is missing or expired, prompt for password
+                const enteredPassword = prompt(
+                    "🔐 Please enter the password to access the Question Bank:",
+                );
+
+                if (enteredPassword === CORRECT_PASSWORD) {
+                    // Password correct: Grant access and set new expiry token
+                    const newExpiry = now + EXPIRY_DURATION_MS;
+                    localStorage.setItem(
+                        ACCESS_EXPIRY_KEY,
+                        newExpiry.toString(),
+                    );
+                    accessGranted = true;
+                } else {
+                    // Password incorrect: Deny access and show message
+                    accessGranted = false;
+                    window.location.href = "index.html";
+                }
+            }
+            // --- END: PASSWORD PROTECTION GATE ---
+
+            document.addEventListener("DOMContentLoaded", () => {
+                // Only proceed if the password check was successful
+                if (!accessGranted) {
+                    return;
+                }
+
+                // If access is granted, the original logic runs:
+
+                // --- Fetch Question Bank Data from JSON file ---
+                fetch("bank.json?t=" + new Date().getTime())
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! status: ${response.status}`,
+                            );
+                        }
+                        return response.json();
+                    })
+                    .then((questionBankData) => {
+                        // Initial render on page load after fetching data
+                        renderQuestionBank(questionBankData);
+                    })
+                    .catch((e) => {
+                        console.error(
+                            "Error fetching or parsing question bank data:",
+                            e,
+                        );
+                        semestersContainer.innerHTML = `<p class="text-slate-400 text-center">Failed to load question bank. Please try again later.</p>`;
+                    });
+
+                /**
+                 * Converts an ISO date string to a relative time format (e.g., "Last attempted 5 days ago").
+                 * @param {string} dateString - The ISO 8601 date string.
+                 * @returns {string} A formatted relative time string.
+                 */
+                const formatRelativeDate = (dateString) => {
+                    if (!dateString || typeof dateString !== "string") {
+                        return "Not Attempted";
+                    }
+                    const now = new Date();
+                    const past = new Date(dateString);
+                    const diffInMilliseconds = now - past;
+
+                    if (isNaN(past.getTime())) {
+                        return "Not Attempted";
+                    }
+
+                    if (diffInMilliseconds < 0) return "Attempted Recently";
+
+                    const diffInDays = Math.floor(
+                        diffInMilliseconds / (1000 * 60 * 60 * 24),
+                    );
+
+                    if (diffInDays === 0) {
+                        return "Last Attempted Today";
+                    }
+                    if (diffInDays === 1) {
+                        return "Last Attempted Yesterday";
+                    }
+                    return `Last Attempted ${diffInDays} Days Ago`;
+                };
+
+                // --- Renders the entire question bank from the JSON data ---
+                const renderQuestionBank = (data) => {
+                    semestersContainer.innerHTML = ""; // Clear existing content
+
+                    if (!data.semesters || data.semesters.length === 0) {
+                        semestersContainer.innerHTML = `<p class="text-slate-400 text-center">No quizzes have been added to the question bank yet.</p>`;
+                        return;
+                    }
+
+                    data.semesters.forEach((semester) => {
+                        const semesterElement = document.createElement("div");
+                        semesterElement.className =
+                            "semester-section bg-slate-800/50 p-4 sm:p-6 rounded-lg border border-slate-700";
+
+                        const weeksHtml = semester.weeks
+                            .map((week) => {
+                                const quizzesHtml = week.quizzes
+                                    .map((quiz) => {
+                                        if (!quiz.quizData) return ""; // Don't render quiz if no data
+
+                                        // --- Dynamic Data Fetching ---
+                                        let questionCount = 0;
+                                        let lastAttemptScore = "N/A";
+                                        let lastAttemptDate = "Not Attempted";
+                                        let quizTitle = "Untitled Quiz";
+
+                                        // Calculate Question Count and get Title from quizData
+                                        try {
+                                            const decodedQuiz = JSON.parse(
+                                                atob(quiz.quizData),
+                                            );
+                                            questionCount =
+                                                decodedQuiz.questions
+                                                    ? decodedQuiz.questions
+                                                          .length
+                                                    : 0;
+                                            quizTitle =
+                                                decodedQuiz.quizTitle ||
+                                                quizTitle; // Use title from data
+                                        } catch (e) {
+                                            console.error(
+                                                "Failed to decode quiz data:",
+                                                e,
+                                            );
+                                        }
+
+                                        // Check Local Storage for previous attempt results
+                                        const storedResult =
+                                            localStorage.getItem(quiz.quizData);
+                                        if (storedResult) {
+                                            try {
+                                                const decodedResult =
+                                                    JSON.parse(
+                                                        atob(storedResult),
+                                                    );
+
+                                                // CORRECTED LOGIC: Check for score object and completedAt property
+                                                if (
+                                                    decodedResult &&
+                                                    typeof decodedResult.score ===
+                                                        "object" &&
+                                                    decodedResult.score
+                                                        .percentage !==
+                                                        undefined
+                                                ) {
+                                                    lastAttemptScore = `${decodedResult.score.percentage}%`;
+                                                } else {
+                                                    lastAttemptScore = "N/A";
+                                                }
+
+                                                if (
+                                                    decodedResult &&
+                                                    typeof decodedResult.completedAt ===
+                                                        "string" &&
+                                                    decodedResult.completedAt.trim() !==
+                                                        ""
+                                                ) {
+                                                    lastAttemptDate =
+                                                        formatRelativeDate(
+                                                            decodedResult.completedAt,
+                                                        );
+                                                } else {
+                                                    lastAttemptDate =
+                                                        "Not Attempted";
+                                                }
+                                            } catch (e) {
+                                                console.error(
+                                                    "Failed to parse stored quiz result:",
+                                                    e,
+                                                );
+                                                // If parsing fails, reset to defaults
+                                                lastAttemptScore = "N/A";
+                                                lastAttemptDate =
+                                                    "Not Attempted";
+                                            }
+                                        }
+
+                                        // --- HTML Generation ---
+                                        const scoreColor =
+                                            lastAttemptScore === "N/A"
+                                                ? "bg-slate-700 text-slate-300"
+                                                : "bg-teal-900/50 text-teal-300";
+                                        const dateColor =
+                                            lastAttemptDate === "Not Attempted"
+                                                ? "bg-slate-700 text-slate-300"
+                                                : "bg-sky-900/50 text-sky-300";
+                                        const link = `quiz.html?quiz=${encodeURIComponent(
+                                            quiz.quizData,
+                                        )}`;
+
+                                        return `
+                                <a href="${link}" class="quiz-item flex flex-col sm:flex-row sm:items-center sm:justify-between bg-slate-800 p-3 rounded-md gap-2 sm:gap-4 hover:bg-slate-700/50 transition-colors cursor-pointer">
+                                    <span class="quiz-title text-base text-slate-300 font-semibold order-1 sm:order-none">${quizTitle}</span>
+                                    <div class="quiz-pills-container flex items-center gap-2 flex-wrap order-2 sm:order-none sm:justify-end">
+                                        <span class="bg-slate-700 text-slate-300 text-xs font-medium px-2.5 py-0.5 rounded-full">${questionCount} Questions</span>
+                                        <span class="${scoreColor} text-xs font-medium px-2.5 py-0.5 rounded-full">Score: ${lastAttemptScore}</span>
+                                        <span class="${dateColor} text-xs font-medium px-2.5 py-0.5 rounded-full">${lastAttemptDate}</span>
+                                    </div>
+                                </a>
+                            `;
+                                    })
+                                    .join("");
+
+                                return `
+                            <div class="week-section ml-0 sm:ml-8 border-l-0 sm:border-l border-slate-700 pl-0 sm:pl-6 py-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-slate-300">${week.title}</h3>
+                                </div>
+                                <div class="quizzes-container space-y-3">${quizzesHtml}</div>
+                            </div>
+                        `;
+                            })
+                            .join("");
+
+                        semesterElement.innerHTML = `
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-slate-100">${semester.title}</h2>
+                        </div>
+                        <div class="weeks-container">${weeksHtml}</div>
+                    `;
+
+                        semestersContainer.appendChild(semesterElement);
+                    });
+                };
+            });
+        </script>
+    </body>
+</html>
