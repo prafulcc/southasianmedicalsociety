@@ -1,6 +1,6 @@
 # SAMS Quiz Platform
 
-Production instance hosted here: [southasianmedicalsociety.pages.dev](https://southasianmedicalsociety.pages.dev/))
+Production instance hosted here: [southasianmedicalsociety.pages.dev](https://southasianmedicalsociety.pages.dev/)
 
 ## Project Overview
 
